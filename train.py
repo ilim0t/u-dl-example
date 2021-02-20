@@ -1,12 +1,11 @@
 import argparse
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import transforms
 from torch.optim.lr_scheduler import StepLR
 from dataset import Dataset
-
+from model import Net
 
 def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
@@ -84,15 +83,15 @@ def main():
         test_kwargs.update(cuda_kwargs)
 
     transform = transforms.Compose([
+        # transforms.Resize((224, 224)),
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
     ])
-    dataset1 = Dataset('images', train=True, download=True,
-                       transform=transform)
-    dataset2 = Dataset.MNIST('images', train=False,
-                             transform=transform)
-    train_loader = torch.utils.data.DataLoader(dataset1, **train_kwargs)
-    test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
+    dataset = Dataset('images', transform=transform)
+    train_dataset, test_dataset = torch.utils.data.random_split(
+        dataset, [round(len(dataset)*0.9), round(len(dataset)*0.1)])
+    train_loader = torch.utils.data.DataLoader(train_dataset, **train_kwargs)
+    test_loader = torch.utils.data.DataLoader(test_dataset, **test_kwargs)
 
     model = Net().to(device)
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)

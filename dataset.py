@@ -1,8 +1,6 @@
 from torchvision.datasets import VisionDataset
 from typing import Callable, Optional
 from pathlib import Path
-import glob
-import numpy as np
 from PIL import Image
 
 
