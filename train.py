@@ -3,9 +3,10 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import transforms
-from torch.optim.lr_scheduler import StepLR
 from dataset import Dataset
 from model import Net
+import math
+
 
 def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
@@ -52,7 +53,7 @@ def main():
                         help='input batch size for testing (default: 1000)')
     parser.add_argument('--epochs', type=int, default=14, metavar='N',
                         help='number of epochs to train (default: 14)')
-    parser.add_argument('--lr', type=float, default=1.0, metavar='LR',
+    parser.add_argument('--lr', type=float, default=1e-3, metavar='LR',
                         help='learning rate (default: 1.0)')
     parser.add_argument('--gamma', type=float, default=0.7, metavar='M',
                         help='Learning rate step gamma (default: 0.7)')
@@ -83,27 +84,25 @@ def main():
         test_kwargs.update(cuda_kwargs)
 
     transform = transforms.Compose([
-        # transforms.Resize((224, 224)),
+        transforms.Resize((224, 224)),
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
     ])
     dataset = Dataset('images', transform=transform)
     train_dataset, test_dataset = torch.utils.data.random_split(
-        dataset, [round(len(dataset)*0.9), round(len(dataset)*0.1)])
+        dataset, [math.floor(len(dataset)*0.9), math.ceil(len(dataset)*0.1)])
     train_loader = torch.utils.data.DataLoader(train_dataset, **train_kwargs)
     test_loader = torch.utils.data.DataLoader(test_dataset, **test_kwargs)
 
     model = Net().to(device)
-    optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
+    optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
-    scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
         test(model, device, test_loader)
-        scheduler.step()
 
     if args.save_model:
-        torch.save(model.state_dict(), "mnist_cnn.pt")
+        torch.save(model.state_dict(), "cnn.pt")
 
 
 if __name__ == '__main__':
